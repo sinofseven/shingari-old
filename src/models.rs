@@ -38,4 +38,5 @@ pub struct Configuration {
     pub webhook_url: String,
     pub pid: i32,
     pub interval_seconds: u64,
+    pub memo: Option<String>
 }

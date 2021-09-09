@@ -19,6 +19,7 @@ fn main() {
 
 const ARG_PID: &str = "arg_pid";
 const ARG_DESTINATION: &str = "arg_destination";
+const ARG_MEMO: &str = "arg_memo";
 
 fn process() -> Result<(), String> {
     let args = get_args();
@@ -28,7 +29,7 @@ fn process() -> Result<(), String> {
         Some(s) => s,
     };
     let datetime_start = Utc::now();
-    let message_start = create_message(configure.pid, &cmd, &datetime_start, None);
+    let message_start = create_message(&configure, &cmd, &datetime_start, None);
     let text_start = WebhookPayload::create(&message_start)?;
     post_message(&configure.webhook_url, &&text_start)?;
     loop {
@@ -40,7 +41,7 @@ fn process() -> Result<(), String> {
         }
     }
     let datetime_end = Utc::now();
-    let message_end = create_message(configure.pid, &cmd, &datetime_start, Some(&datetime_end));
+    let message_end = create_message(&configure, &cmd, &datetime_start, Some(&datetime_end));
     let text_end = WebhookPayload::create(&message_end)?;
     post_message(&configure.webhook_url, &text_end)
 }
@@ -61,6 +62,12 @@ fn get_args() -> ArgMatches<'static> {
                 .required(true)
                 .long("destination")
                 .short("d")
+                .takes_value(true),
+        )
+        .arg(
+            Arg::with_name(ARG_MEMO)
+                .long("memo")
+                .short("m")
                 .takes_value(true),
         )
         .get_matches()
@@ -91,11 +98,13 @@ fn resolve_configuration(args: &ArgMatches) -> Result<Configuration, String> {
             Some(v) => v.clone(),
         }
     };
+    let memo = args.value_of(ARG_MEMO).map(|s| s.to_string());
 
     Ok(Configuration {
         webhook_url: dest,
         pid: pid,
         interval_seconds: 60,
+        memo: memo,
     })
 }
 
@@ -105,7 +114,7 @@ fn get_process_cmd(pid: i32) -> Option<String> {
 }
 
 fn create_message(
-    pid: i32,
+    configuration: &Configuration,
     cmd: &str,
     datetime_start: &DateTime<Utc>,
     datetime_end: Option<&DateTime<Utc>>,
@@ -120,8 +129,12 @@ fn create_message(
     };
 
     lines.push(message.to_string());
-    lines.push(format!("- Pid: `{}`", pid));
+    lines.push(format!("- Pid: `{}`", configuration.pid));
     lines.push(format!("- Cmd: `{}`", cmd));
+
+    if let Some(memo) = configuration.memo.clone() {
+        lines.push(format!("- Memo: `{}`", memo));
+    }
 
     lines.push(format!(
         "- Start: `{}`",
