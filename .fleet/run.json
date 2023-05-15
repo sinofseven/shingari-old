@@ -1,0 +1,10 @@
+{
+    "configurations": [
+        {
+            "type": "cargo",
+            "name": "fmt",
+            "cargoArgs": ["fmt"],
+        },
+        
+    ]
+}

@@ -11,3 +11,4 @@ name = "pesn"
 path = "src/main.rs"
 
 [dependencies]
+dirs = "5.0.1"
